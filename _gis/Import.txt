@@ -1,0 +1,43 @@
+
+
+This is what you need to do:
+
+    Open the Python window in ArcGIS, as described here
+
+    In there run these two commands:
+
+    import sys
+
+    sys.executable
+
+    Copy the output of the last command
+
+    Open Spyder and go to
+
+    Tools > Preferences > Python interpreter
+
+    Select the option
+
+    Use the following Python interpreter
+
+    and paste there the result of step 3.
+
+    Finally go to Consoles > Open an IPython console. This will open a new console that will be running the same Python version that comes with 
+ArcGIS but inside Spyder. So you could run there whatever command you can run in ArcGIS Python Window.
+
+Note: It is possible that this doesn't work if the Python that comes with ArcGIS doesn't have the ipykernel package.
+
+C:/Program Files (x86)/ArcGIS/Desktop10.5/bin/ArcMap.exe
+
+C:\Python27;
+C:\PCI Geomatics\Geomatica 2016\exe;
+%INTEL_DEV_REDIST%redist\intel64\compiler;
+C:\ProgramData\Oracle\Java\javapath;
+%SystemRoot%\system32;
+%SystemRoot%;
+%SystemRoot%\System32\Wbem;
+%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\
+
+
+
+C:\Python27\ArcGIS10.5\Lib\idlelib;C:\Windows\system32\python27.zip;C:\Python27\ArcGIS10.5\DLLs;C:\Python27\ArcGIS10.5\lib;C:\Python27\ArcGIS10.5\lib\plat-win;C:\Python27\ArcGIS10.5\lib\lib-tk;C:\Python27\ArcGIS10.5;C:\Python27\ArcGIS10.5\lib\site-packages;C:\Program Files (x86)\ArcGIS\Desktop10.5\bin;C:\Program Files (x86)\ArcGIS\Desktop10.5\arcpy;C:\Program Files (x86)\ArcGIS\Desktop10.5\ArcToolbox\Scripts
