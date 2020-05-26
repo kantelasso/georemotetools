@@ -16,14 +16,10 @@ today_path=lsa.get_nvisite()
 lsa.vtime(today_path,paths=True,zone='world')
 #lsa.lesscloud()
 lsa.fvisite('199053',zone='world')
-rv=lsa.revisite('199053',enddate='06/2020',zone='world')
+rv=lsa.revisite('199053',enddate='07/2020',zone='world')
 
 lsa.fvisite(pathrow='199053',zone='world')
 lsa.rfvisite(pathrow='199053',zone='world')
-
 lsa.rfvisite(pathrow='199053',zone='world')
-
 #ip=lsa.get_irvisite(zone='world')
-
-
 #%run l8_realtime_fly.py

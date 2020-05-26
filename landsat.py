@@ -17,7 +17,7 @@ class Landsat8(object):
     your area interest like image quality, the cloud covery and its period. It can
     tell you when landsat8 will revisite your area of interest in the future.
     """
-    def __init__(self):
+    def __init__(self,import_data=True):
         self.lanch_date='2013/02/11'
         self.begin_date_world='2013/03/08'
         self.zone=None
@@ -25,7 +25,8 @@ class Landsat8(object):
         self.frv = None
         self.lvisite = None
         self.wdir = './data/'
-        self.gn = self.import_data('world')
+        if True==import_data:
+            self.gn = self.import_data('world')
         return
 
     ##  *** Predicte the future visite of landsat satelite **
@@ -59,23 +60,23 @@ class Landsat8(object):
         """Cloud distribution in year per month
         """
 #        gn=self.import_data(zone)
-        gn=self.gn
+#        gn=self.gn
         fig = plt.figure()
         ax = fig.add_subplot(121)
 #        plt.grid()
         clouds = [100,10,1,0.1,0] # cloud amont in scene
         for i in range(len(clouds)-1):
-            gnlc=gn[(gn.SCC<=clouds[i]) & (gn.SCC>clouds[i+1])]
+            gnlc=self.gn[(self.gn.SCC<=clouds[i]) & (self.gn.SCC>clouds[i+1])]
             alpha = 1.0*(i+1)/len(clouds)
             plt.scatter(gnlc.ADate.dt.dayofyear,'SCC',s=10*(i*2+1),marker='o',data=gnlc,alpha=alpha)
             plt.yscale('log') # Set Y axis Semi log
         plt.xlabel('Day of year')
         plt.ylabel('Cloud covery')
-#        plt.xlim(1,366)
-#        plt.ylim(1,100)
+        plt.xlim(1,366)
+        plt.ylim(1,100)
         # Boxplot of cloud covery
         ax = fig.add_subplot(122)
-        gn.boxplot('SCC',by=gn.ADate.dt.month,ax=ax)
+        self.gn.boxplot('SCC',by=self.gn.ADate.dt.month,ax=ax)
         plt.ylim(0,100)
         plt.legend((clouds))
         return
@@ -84,19 +85,21 @@ class Landsat8(object):
     def cloudcovery(self,pathrow=None,zone='gn',period='month',tplot='boxplot'):
         """Plot cloud covery per period
         Parameters: period, tplot
-        period: default 'month', it can take 'dayofyea', 'week', 'month'
+        period: default 'month', it can take 'dayofyear', 'week', 'month'
         tplot: default 'boxplot', it can take 'scatter', 'hist' and 'boxplot'
         """
         # Create periodic variable like, year, month, week, and day
 #        gn=self.import_data(zone)
-        gn=self.gn
-        gn['year']=gn.loc[:,'ADate'].dt.year
-        gn['month']=gn.loc[:,'ADate'].dt.month
-        gn['week']=gn.loc[:,'ADate'].dt.week
-        gn['dayofyear']=gn.loc[:,'ADate'].dt.dayofyear
+#        gn=self.gn
+        self.gn['year']=self.gn.loc[:,'ADate'].dt.year
+        self.gn['month']=self.gn.loc[:,'ADate'].dt.month
+        self.gn['week']=self.gn.loc[:,'ADate'].dt.week
+        self.gn['dayofyear']=self.gn.loc[:,'ADate'].dt.dayofyear
 
         if None!=pathrow:
-            gn=gn[pathrow==gn.LPID]
+            gn=self.gn[pathrow==self.gn.LPID]
+        else:
+            gn=self.gn
 
         if 'scatter'==tplot:
             plt.scatter(period,'SCC',s=5,marker='o',data=gn,alpha=0.5)
@@ -106,6 +109,20 @@ class Landsat8(object):
             gn.hist('SCC',by=period,bins=nbins(gn['SCC']),density=True)
         else:
             print "We don't take account this type of graphe or period"
+        return
+
+
+    def lesscloud(self,zone='gn'):
+        # -- Histogram off SCC -- #
+#        gn=self.import_data(zone)
+#        gn=self.gn
+        clouds = [100,10,1,0.1,0] # cloud amont in scene
+        for i in range(len(clouds)-1):
+            gnlc=self.gn[(self.gn.SCC<=clouds[i]) & (self.gn.SCC>clouds[i+1])]
+            gnlc.ADate.dt.dayofyear.hist(bins=nbins(gnlc.ADate.dt.dayofyear),fill=False,
+                                histtype='step',density=True,linewidth=i+1)
+            plt.legend((clouds))
+            print 'Cloud: %1.1f to %1.1f percent %d days'%((clouds[i],clouds[i+1],len(gnlc)))
         return
 
     def vtime(self,pathrow=None,paths=False,zone='gn'):
@@ -136,33 +153,21 @@ class Landsat8(object):
             plt.legend((years))
         return
 
-    def lesscloud(self,zone='gn'):
-        # -- Histogram off SCC -- #
-#        gn=self.import_data(zone)
-        gn=self.gn
-        clouds = [100,10,1,0.1,0] # cloud amont in scene
-        for i in range(len(clouds)-1):
-            gnlc=gn[(gn.SCC<=clouds[i]) & (gn.SCC>clouds[i+1])]
-            gnlc.ADate.dt.dayofyear.hist(bins=nbins(gnlc.ADate.dt.dayofyear),fill=False,
-                                histtype='step',density=True,linewidth=i+1)
-            plt.legend((clouds))
-            print 'Cloud: %1.1f to %1.1f percent %d days'%((clouds[i],clouds[i+1],len(gnlc)))
-
-    def revisite(self,pathrow='199053',enddate='06/2020',zone='gn', history=True, Next=True):
+    def revisite(self,pathrow='199053',zone='world', history=True, Next=True):
         """Compare real visite and planed visite date of landsat image
         It can tell you the last and next visite date
         @createdate:09 May 2020
         """
-#        gn=self.import_data(zone)
-        gn=self.gn
-        if 0==len(gn[gn.LPID==pathrow]):
+        if 0==len(self.gn[self.gn.LPID==pathrow]):
             print "Pathrow %s does not exit."%(pathrow)
             print "Please try an other one."
             return
         # Determine real visite date
-        real_visite=gn[gn.LPID==pathrow].ADate
+        real_visite=self.gn[self.gn.LPID==pathrow].ADate
         real_visite=real_visite.sort_values()
         real_visite.index=real_visite
+        today=datetime.date.today()
+        enddate=str('%d/%d'%((today.month+2,today.year)))
         real_visite=real_visite[real_visite<=enddate]
         # First visite according to images
         fvisite=self.rfvisite(pathrow=pathrow,zone=zone)
@@ -175,11 +180,9 @@ class Landsat8(object):
 
         if True==history:
             diff=len(rvisite[~rvisite.Diff.notna()])
-            print 'Between %s to %s in scene %s'%((fvisite,enddate,pathrow))
-            print 'There are %d missing image'%(diff)
+            print ' Between %s to %s in scene %s'%((fvisite,enddate,pathrow))
+            print ' There are %d missing image'%(diff)
         if True==Next:
-            today=datetime.date.today()
-            enddate=str('%d/%d'%((today.month+1,today.year)))
             today=str('%d/%d/%d'%((today.day,today.month,today.year)))
             today=pd.to_datetime(today,dayfirst=True)
             rvisite['Delta']=rvisite.PlanedDate-today
@@ -187,50 +190,45 @@ class Landsat8(object):
             near_visite=rvisite.sort_values(by='Delta',ascending=False)[0:3]
             last_visite=near_visite[near_visite.Delta.dt.days<0].sort_values(by='Delta',ascending=False)
             last_visite=last_visite.iloc[0,:].PlanedDate
-            print 'The last visite was on %s the %s %s %d'%(
+            print ' The last visite was on %s the %s %s %d'%(
                     (last_visite.day_name(),last_visite.day,last_visite.month_name(),last_visite.year))
             next_visite=near_visite[near_visite.Delta.dt.days>=0].sort_values(by='Delta',ascending=True)
             if 0==next_visite.iloc[0,:].Delta.days:
-                print 'Great! Today you can download a new image'
+                print ' Great! Today you can download a new image'
             elif 1==next_visite.iloc[0,:].Delta.days:
-                print 'Great! Tomorrow you can download a new image'
+                print ' Great! Tomorrow you can download a new image'
             else:
-                print 'Great! about %d days, you can download a new image'%(next_visite.iloc[0,:].Delta.days)
+                print ' Good! about %d days, you can download a new image'%(next_visite.iloc[0,:].Delta.days)
             next_visite=next_visite.iloc[0,:].PlanedDate
-            print 'The next visite will be on %s the %s %s %d'%(
+            print ' The next visite will be on %s the %s %s %d'%(
                     (next_visite.day_name(),next_visite.day,next_visite.month_name(),next_visite.year))
             # Estimate cloud covery of the next visite
-            nxday=gn[(gn.LPID==pathrow) & (gn.ADate.dt.month==next_visite.month) & (gn.ADate.dt.day==next_visite.day)].loc[:,['ADate','SCC']]
-            print nxday
+            nxday=self.gn[(self.gn.LPID==pathrow)
+                     & (self.gn.ADate.dt.month==next_visite.month)
+                     & (self.gn.ADate.dt.day==next_visite.day)
+                     ].loc[:,['ADate','SCC']]
+            if len(nxday)!=0: print nxday
             next_visite=str('%d/%d/%d'%((next_visite.day,next_visite.month,next_visite.year)))
             next_visite=pd.to_datetime(today,dayfirst=True)
-            cloud=gn[(gn.LPID==pathrow) & (gn.ADate.dt.month==next_visite.month)].loc[:,['ADate','SCC']]
-            print 'In this month the cloud covery is: min:%1.2f, mean:%1.2f, max:%1.2f'%(
+            cloud=self.gn[(self.gn.LPID==pathrow) & (self.gn.ADate.dt.month==next_visite.month)].loc[:,['ADate','SCC']]
+            if len(cloud)!=0: print ' In this month the cloud covery is: min:%1.2f, mean:%1.2f, max:%1.2f'%(
                     (cloud.SCC.min(),cloud.SCC.mean(),cloud.SCC.max()))
-            print cloud
-#            self.cloudcovery(pathrow=pathrow,tplot='boxplot',period='month')
-        return near_visite
-#        return rvisite
+            if len(cloud)!=0: print cloud
+            return near_visite
 
-    def fvisite(self,path=None,row=None,pathrow=None,zone='gn'):
-        """Get the first visite of landsat 8 for all or a specific scene
+    def fvisite(self,pathrow=None,zone='gn'):
+        """Get the first visite of landsat 8 for one or many scene
         @createdate:09 May 2020
         """
-#        gn=self.import_data(zone)
-        gn=self.gn
         if type(pathrow)==list:
-            gn=gn[gn.LPID.isin(pathrow)]
-            ids = gn.LPID.sort_values().unique()
+            gn=self.gn[self.gn.LPID.isin(pathrow)]
+            ids = self.self.gn.LPID.sort_values().unique()
             fvs=pd.DataFrame(columns=['LPID','FV'])
             for i in ids:
                 fv=gn[gn.LPID==i].ADate.min()
                 fvs=fvs.append({'LPID':i,'FV':fv}, True)
-                if 0==i and 2<=len(ids): # Show progress text for multiple scene
-                    print "Please wait it's in progress... "
-                elif len(ids)-1==i and 2<=len(ids):
-                    print "Thank's it done. See your data "
         elif type(pathrow)==str:
-            gn=gn[pathrow==gn.LPID]
+            gn=self.gn[pathrow==self.gn.LPID]
             fvs=gn[pathrow==gn.LPID].ADate.min()
             fvs=str(fvs.date())
         else:
@@ -247,8 +245,7 @@ class Landsat8(object):
         irfvs: irregular first visites, default False
         """
 #        gn=self.import_data(zone)
-        gn=self.gn
-        rv=gn[gn.LPID==pathrow].ADate.sort_values(ascending=True)
+        rv=self.gn[self.gn.LPID==pathrow].ADate.sort_values(ascending=True)
         try:
             fv=self.fvisite(pathrow=pathrow,zone=zone)
         except:
@@ -260,7 +257,7 @@ class Landsat8(object):
         irv=pd.concat([rv,pv],axis=1)
         irv['Diff']=irv.ADate-irv.PlanedDate
         if 0==len(irv[(abs(irv.Diff.dt.days)>0) & (abs(irv.Diff.dt.days)<16)]):
-            print 'Scene: %s, regular images at begin %s '%((pathrow,fv))
+            print ' Scene: %s, regular images at begin %s '%((pathrow,fv))
             if True==fvr:
                 return fv
         else:
@@ -281,7 +278,7 @@ class Landsat8(object):
                     mod=der%16
                     if 0!=mod: # Take seconds regular visite dates
                         uix.append(i+1)
-                print 'Irregular images from %s to %s'%((fv,str(unic.loc[uix[-1],'ADate'].date())))
+                print ' Irregular images from %s to %s'%((fv,str(unic.loc[uix[-1],'ADate'].date())))
                 print '   Scene: %s is Regular since %s'%((pathrow,str(unic.loc[uix[-1],'ADate'].date())))
                 if True==irfvs:
                     print unic.iloc[uix,:]
@@ -292,13 +289,11 @@ class Landsat8(object):
         Get irregular visite scene of landsat
         @createdate: 12 May 2020
         """
-#        gn=self.import_data(zone)
-        gn=self.gn
-        pathrows=gn.LPID.sort_values().unique()
+        pathrows=self.gn.LPID.sort_values().unique()
         iprs=[]
         for pathrow in pathrows:
-            fv=self.fvisite(pathrow=pathrow,data=zone)
-            rfv=self.rfvisite(pathrow=pathrow,data=zone,fvr=True,rfv_id=False)
+            fv=self.fvisite(pathrow=pathrow,zone=zone)
+            rfv=self.rfvisite(pathrow=pathrow,zone=zone,fvr=True,rfv_id=False)
             try:
                 iprs.append([pathrow,fv,rfv])
             except:
@@ -311,40 +306,40 @@ class Landsat8(object):
         iprs.to_csv(self.wdir+'FRV_2013_04-2020_1.csv')
 
         if True==plot or 'world'==zone:
-            x=gn[gn.LPID.isin(iprs[iprs.FV!=iprs.RFV].LPID)].CenterLongdec
-            y=gn[gn.LPID.isin(iprs[iprs.FV!=iprs.RFV].LPID)].CenterLatdec
+            x=self.gn[self.gn.LPID.isin(iprs[iprs.FV!=iprs.RFV].LPID)].CenterLongdec
+            y=self.gn[self.gn.LPID.isin(iprs[iprs.FV!=iprs.RFV].LPID)].CenterLatdec
             plt.Figure()
-            plt.scatter(x=gn.CenterLongdec,y=gn.CenterLatdec,s=1,c='b',alpha=0.2)
+            plt.scatter(x=self.gn.CenterLongdec,y=self.gn.CenterLatdec,s=1,c='b',alpha=0.2)
             plt.scatter(x=x,y=y,s=1.5,c='r',alpha=0.3)
         return iprs
 
     def get_nvisite(self,flyear='last'):
         """ Get the paths from wich landsat 8 will pass today
+        Usefull informations:
+            Path: Satellite path
+            LRFV: Last regular first visite of satellite
+            LPV: Last planned visite
         """
-        if  None!=self.frv:
-            fvr=self.frv
-        else:
-            if 'all'==flyear:
-                fvr=pd.read_csv(self.wdir+'FRV_2013_04-2020.csv',index_col=0)
-                fvr.LPID=fvr.ID.str.strip('_')
-                fvr.drop(columns='ID',inplace=True)
-                fvr.FV=pd.to_datetime(fvr.FV,dayfirst=True)
-                fvr.RFV=pd.to_datetime(fvr.RFV,dayfirst=True)
-            elif 'last'==flyear:
-                fvr=pd.read_csv(self.wdir+'L8_Last_visite_04-2020.csv',index_col=0)
-                fvr['RFV']=pd.to_datetime(fvr.LPV,dayfirst=True)
+        if 'all'==flyear:
+            fvr=pd.read_csv(self.wdir+'FRV_2013_04-2020.csv',index_col=0)
+            fvr.LPID=fvr.ID.str.strip('_')
+            fvr.drop(columns='ID',inplace=True)
+            fvr.FV=pd.to_datetime(fvr.FV,dayfirst=True)
+            fvr.RFV=pd.to_datetime(fvr.RFV,dayfirst=True)
+        elif 'last'==flyear:
+            fvr=pd.read_csv(self.wdir+'L8_Last_visite_04-2020.csv',index_col=0)
+            fvr['RFV']=pd.to_datetime(fvr.LPV,dayfirst=True)
+
         paths=fvr.PATH.sort_values().unique()
-        last_rvisites = []
-        today_paths = []
+        last_rvisites, today_paths = [], []
+        today=datetime.date.today()
+        enddate=str('%d/%d'%((today.month+1,today.year)))
+        today=str('%d/%d/%d'%((today.day,today.month,today.year)))
+        today=pd.to_datetime(today,dayfirst=True)
+
         for path in paths:
             d=fvr[path==fvr.PATH]
-            lfv=str(d.RFV.sort_values(ascending=False).dt.date.max())
-
-            today=datetime.date.today()
-            enddate=str('%d/%d'%((today.month+1,today.year)))
-            today=str('%d/%d/%d'%((today.day,today.month,today.year)))
-            today=pd.to_datetime(today,dayfirst=True)
-
+            lfv=str(d.RFV.dt.date.max())
             planed_visite=pd.date_range(start=lfv,end=enddate,freq='16d')
             planed_visite=pd.DataFrame(planed_visite,columns=['PlanedDate'])
             planed_visite['Diff_to_now']=planed_visite.PlanedDate-today
@@ -355,7 +350,6 @@ class Landsat8(object):
         if 'all'==flyear:
             last_rvisites=pd.DataFrame(last_rvisites,columns=['Path','LRFV','LPV'])
             last_rvisites.to_csv(self.wdir+'L8_Last_visite.csv')
-        self.get_pathrow('world')
         return today_paths
 
     def get_pathrow(self,zone):

@@ -1,4 +1,4 @@
-# Ignore _Profile folder
-_Profiler/
+# Ignore document
+_Profiler//**/*.Result #ignore _Profiler directory and it's content
 _gis/
-
+profiler.py

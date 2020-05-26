@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun May 14 14:46:24 2020
-
 @author: Lancine KANTE
 """
 
+import landsat as lsat
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import pandas as pd
-import landsat as lsat
 
 lsa=lsat.Landsat8()
 today_path=lsa.get_nvisite()
 gn=lsa.gn
-#gn=gn[gn.DayNight=='DAY']
+gn=gn[gn.DayNight=='DAY']
 
 gn=gn[gn.ADate.between('02/01/2020','02/16/2020')]
 xs = np.array(gn.loc[:,'CenterLongdec'])
@@ -34,8 +33,8 @@ nframe=len(gn.LPID.unique())
 fig = plt.figure()
 fig.add_subplot(111)
 l, = plt.plot([], [], 'o',color='k',markersize=2,alpha=0.1)
-plt.xlim(xs.min(),xs.max())
-plt.ylim(ys.min(),ys.max())
+plt.xlim(-180,180) # Limit of longitude
+plt.ylim(-90,90) # Limit of latitude
 line_static = FuncAnimation(fig, update_line, nframe, fargs=(xs, ys, l, False),
                                    interval=10)
 
@@ -52,19 +51,19 @@ ys = np.array(wrs.loc[:,'CenterLat'])
 fig.add_subplot(111)
 n_drops = len(xs)
 # Create satelite characteristic
-rain_drops = np.zeros(n_drops, dtype=[('position', float, 2),
+satellite = np.zeros(n_drops, dtype=[('position', float, 2),
                                       ('size',     float, 1),
                                       ('growth',   float, 1),
                                       ('color',    float, 4)])
 
-rain_drops['position'][:, 0] = xs
-rain_drops['position'][:, 1] = ys
-rain_drops['growth'] = np.linspace(15, 5, n_drops)
+satellite['position'][:, 0] = xs
+satellite['position'][:, 1] = ys
+satellite['growth'] = np.linspace(15, 5, n_drops)
 
 # Construct the scatter which we will update during animation
-# as the raindrops develop.
-scat = plt.scatter(rain_drops['position'][:, 0], rain_drops['position'][:, 1],
-                  s=rain_drops['size'], lw=0.1, edgecolors=rain_drops['color'],
+# as the satellite moves.
+scat = plt.scatter(satellite['position'][:, 0], satellite['position'][:, 1],
+                  s=satellite['size'], lw=0.1, edgecolors=satellite['color'],
                   facecolors='r')
 
 def update(frame_number):
@@ -72,20 +71,20 @@ def update(frame_number):
     current_index = frame_number % n_drops
 
     # Make all colors more transparent as time progresses.
-    rain_drops['color'][:, 3] -= 1.0/len(rain_drops)
-    rain_drops['color'][:, 3] = np.clip(rain_drops['color'][:, 3], 0, 1)
+    satellite['color'][:, 3] -= 1.0/len(satellite)
+    satellite['color'][:, 3] = np.clip(satellite['color'][:, 3], 0, 1)
 
     # Make all circles smaller.
-    rain_drops['size'] -= rain_drops['growth']
+    satellite['size'] -= satellite['growth']
 
     # Pick a new position for oldest satelite position,
     #resetting its size and growth factor.
-    rain_drops['size'][current_index] = 15
-    rain_drops['growth'][current_index] = 5
+    satellite['size'][current_index] = 15
+    satellite['growth'][current_index] = 5
 
     # Update the scatter collection, with the new colors, sizes and positions.
-    scat.set_sizes(rain_drops['size'])
-    scat.set_offsets(rain_drops['position'])
+    scat.set_sizes(satellite['size'])
+    scat.set_offsets(satellite['position'])
 
 # Construct the animation, using the update function as the animation director.
 animation = FuncAnimation(fig, update, interval=50)
@@ -99,5 +98,4 @@ line_anime = FuncAnimation(fig, update_line, nfr, fargs=(xs, ys, line, True),
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
 plt.title('Today Paths: %s [ * Landsat real time fly * ]'%(today_path))
-#fig.tight_layout()
 plt.show()
