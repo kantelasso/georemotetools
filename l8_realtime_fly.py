@@ -34,7 +34,7 @@ ax.set_xlim(-180,180) # Limit of longitude
 ax.set_ylim(-90,90) # Limit of latitude
 ax.set_xlabel('Longitude')
 ax.set_ylabel('Latitude')
-ax.set_title('* Landsat 8 flying path for dotay * See the paths list below \n %s'%(today_path))
+ax.set_title('* Landsat 8 fly path today * See the paths list below \n %s'%(today_path))
 
 l, = plt.plot([], [], 'o',color='k',markersize=2,alpha=0.1)
 #Global taked scene by landsat 8
