@@ -2,3 +2,5 @@
 _Profiler//**/*.Result #ignore _Profiler directory and it's content
 _gis/
 profiler.py
+env_config.txt
+.spyproject/**/*
